@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Q1.COM — 校招生孵化专项 · 最受期待的游戏</title>
+<style>
+  :root{
+    --bg:#000000;
+    --fg:#f4f4f4;
+    --dim:#8a8a8a;
+    --faint:#4d4d4d;
+    --blue:#2f42f2;
+    --blue-lit:#5a68ff;
+    /* 文案天蓝色 */
+    --sky:#7fc4ff;
+    --sky-lit:#a8d8ff;
+    --line:rgba(255,255,255,.10);
+    --pad:clamp(20px,3.2vw,46px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+  body{
+    font-family:"Helvetica Neue",Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-weight:400;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--blue);color:#fff;}
+
+  /* ---------- 颗粒质感 ---------- */
+  .grain{
+    position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+    mix-blend-mode:screen;
+  }
+
+  /* ---------- 跟随鼠标的图片层 ---------- */
+  .trail{
+    position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;
+    transition:opacity .45s ease;
+  }
+  .trail-item{
+    position:absolute;
+    width:clamp(104px,12.6vw,192px);
+    aspect-ratio:3/4;
+    transform:translate(-50%,-50%) scale(.88) rotate(var(--rot,0deg));
+    opacity:0;
+    transition:opacity .62s ease,transform 1.05s cubic-bezier(.16,1,.3,1),filter .62s ease;
+    will-change:opacity,transform;
+    filter:brightness(.86);
+  }
+  .trail-item.show{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(var(--rot,0deg));filter:brightness(1);}
+  .trail-item.out{opacity:0;transform:translate(-50%,-50%) scale(1.08) rotate(var(--rot,0deg));filter:brightness(1.12);}
+  .trail-item img{
+    width:100%;height:100%;object-fit:cover;display:block;
+    filter:grayscale(.18) contrast(1.06) brightness(.9);
+  }
+
+  /* ---------- 首屏 ---------- */
+  .hero{
+    position:relative;z-index:1;
+    min-height:100svh;
+    display:flex;flex-direction:column;
+    padding-top:clamp(22px,4vh,40px);
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:34vh;z-index:1;pointer-events:none;
+    background:linear-gradient(to top,rgba(0,0,0,.94),rgba(0,0,0,0));
+  }
+
+  .bar{
+    position:relative;z-index:4;
+    display:flex;align-items:center;
+    gap:clamp(18px,5vw,74px);
+    padding:0 var(--pad);
+    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+  }
+  .bar .brand{color:#fff;letter-spacing:.2em;display:flex;align-items:center;gap:10px;}
+  .bar .brand i{display:block;width:5px;height:5px;background:var(--blue);}
+  .bar nav{display:flex;gap:clamp(14px,2.4vw,30px);}
+  .bar nav a{transition:color .3s ease;}
+  .bar nav a:hover{color:#fff;}
+
+  .hero-main{
+    position:relative;z-index:3;
+    flex:1;
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:clamp(24px,4vw,60px);
+    padding:0 var(--pad) clamp(28px,5vh,54px);
+  }
+  .hero-left{max-width:430px;flex:0 1 430px;}
+
+  .eyebrow{
+    margin:0 0 clamp(18px,3vh,30px);
+    font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);
+  }
+  .eyebrow b{color:#e6e6e6;font-weight:400;}
+
+  .lede{
+    margin:0;
+    font-size:clamp(12.5px,1.02vw,14px);
+    line-height:2.05;letter-spacing:.015em;
+    color:var(--sky);
+    text-shadow:0 0 34px rgba(127,196,255,.22);
+  }
+  .lede p{margin:0 0 14px;}
+  .lede p:last-child{margin-bottom:0;}
+  .lede strong{color:var(--sky-lit);font-weight:400;}
+
+  /* 首屏 CTA 已整块移除（含 .cta 样式），投票入口只保留作品区底部整行投票条 */
+
+  /* ---------- 作品区底部投票条 ---------- */
+  .votebar{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;
+    margin-top:2px;padding:clamp(26px,4.4vh,44px) clamp(14px,2.2vw,26px);
+    border-top:1px solid var(--line);
+  }
+  .votebar .vb-left{
+    font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);
+    font-variant-numeric:tabular-nums;
+  }
+  .votebar .vb-right{
+    justify-self:end;text-align:right;
+    font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);
+  }
+  .vbtn{
+    display:inline-flex;align-items:center;justify-content:center;gap:12px;
+    padding:16px clamp(24px,3.4vw,46px);
+    border:1px solid rgba(127,196,255,.55);border-radius:0;
+    background:rgba(127,196,255,.05);
+    font-family:inherit;font-size:clamp(11px,1vw,13px);letter-spacing:.2em;
+    color:#bfe0ff;cursor:pointer;text-align:center;
+    transition:background .35s ease,color .35s ease,border-color .35s ease,box-shadow .35s ease;
+  }
+  .vbtn span{transition:transform .35s ease;}
+  .vbtn:hover{border-color:#7fc4ff;background:rgba(127,196,255,.14);color:#fff;box-shadow:0 0 40px rgba(47,66,242,.28);}
+  .vbtn:hover span{transform:translate(3px,-3px);}
+  .vbtn.is-off{border-color:rgba(255,255,255,.14);background:transparent;color:#6f6f6f;cursor:not-allowed;box-shadow:none;}
+  .vbtn.is-off:hover{color:#8a8a8a;border-color:rgba(255,255,255,.22);}
+
+  /* ---------- 首屏布局（右侧 Q1.COM 大字已移除，文案独占左侧栏） ---------- */
+
+
+  .hero-foot{
+    position:relative;z-index:4;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:0 var(--pad) clamp(40px,6vh,64px);
+    font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);
+  }
+  .hero-foot .scroll{display:flex;align-items:center;gap:10px;}
+  .hero-foot .scroll i{
+    display:block;width:1px;height:26px;
+    background:linear-gradient(to bottom,var(--faint),rgba(255,255,255,0));
+    animation:drop 2.4s ease-in-out infinite;
+  }
+  @keyframes drop{0%,100%{transform:translateY(-3px);opacity:.4}50%{transform:translateY(4px);opacity:1}}
+  @keyframes vpulse{0%,100%{box-shadow:0 0 0 rgba(127,196,255,0);}50%{box-shadow:0 0 26px rgba(127,196,255,.22);}}
+  .vbtn:not(.is-off){animation:vpulse 3.6s ease-in-out infinite;}
+  .hero-foot .count{font-variant-numeric:tabular-nums;letter-spacing:.16em;}
+</style>
+</head><body>
+
+<div class="grain"></div>
+<div class="trail" id="trail" aria-hidden="true"></div>
+
+<!-- ================= 首屏 ================= -->
+<section class="hero" id="top">
+  <header class="bar">
+    <a class="brand" href="#top"><i></i>冰川网络 / Q1.COM</a>
+    <nav>
+      <a href="#works">孵化专项</a>
+      <a class="vote-link" href="#works">作品投票</a>
+      <a href="#about">关于专项</a>
+    </nav>
+  </header>
+
+  <div class="hero-main">
+    <div class="hero-left">
+      <p class="eyebrow">校招生孵化专项 <b>/ 2026</b></p>
+      <div class="lede">
+        <p>这里是冰川网络为校招生打造的成长实验场。</p>
+        <p>让每一位校招雪宝在导师与团队的协作中，完成从校园到战场的第一次跃迁——把好奇心、审美与工程能力，做成能跑起来的游戏。</p>
+        <p>现在，诚邀各位雪宝化身“玩家”，为你看好的游戏投票，选出你心中<strong>【最受期待的游戏】</strong>。</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="hero-foot">
+    <span class="scroll">移动鼠标 · 浏览作品 <i></i></span>
+    <span class="count" id="imgCount">01 / 06</span>
+  </div>
+</section><style>
+  /* ---------- 作品瀑布流 ---------- */
+  .works{
+    position:relative;z-index:3;
+    padding:clamp(64px,11vh,132px) var(--pad) 0;
+    background:#000;
+  }
+  .works-head{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+    padding-bottom:clamp(22px,3.4vh,40px);
+    border-bottom:1px solid var(--line);
+    margin-bottom:2px;
+  }
+  .works-head h2{
+    margin:0;font-size:clamp(26px,3.6vw,46px);font-weight:400;
+    letter-spacing:-.02em;line-height:1.05;color:#f2f2f2;
+  }
+  .works-head .sub{margin:12px 0 0;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);}
+  .works-head .right{text-align:right;font-size:10.5px;letter-spacing:.16em;color:var(--faint);white-space:nowrap;}
+  .works-head .right b{color:#e8e8e8;font-weight:400;font-variant-numeric:tabular-nums;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(2,1fr);
+    gap:2px;margin-top:2px;
+  }
+  @media(max-width:760px){.grid{grid-template-columns:1fr;}}
+
+  .card{
+    display:block;margin:0;min-width:0;
+    background:#080808;
+    opacity:0;transform:translateY(20px);
+    transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);
+  }
+  .card.in{opacity:1;transform:none;}
+
+  .card figure{margin:0;overflow:hidden;position:relative;background:#0c0c0c;aspect-ratio:16/9;}
+
+  /* ---------- 悬停浮层：游戏背景 + 项目成员 ---------- */
+  .tip{
+    position:fixed;top:0;left:0;z-index:60;pointer-events:none;
+    width:min(340px,calc(100vw - 48px));
+    padding:18px 20px 17px;
+    background:rgba(6,9,15,.9);
+    border:1px solid rgba(127,196,255,.22);
+    border-radius:0;
+    backdrop-filter:blur(13px) saturate(1.15);-webkit-backdrop-filter:blur(13px) saturate(1.15);
+    box-shadow:0 22px 60px rgba(0,0,0,.72);
+    opacity:0;transform:translate3d(0,0,0);
+    transition:opacity .3s ease;
+  }
+  .tip.on{opacity:1;}
+  .tip .tnum{
+    display:flex;align-items:center;gap:10px;
+    font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:#5c7a9e;
+  }
+  .tip .tnum b{color:var(--sky);font-weight:400;font-variant-numeric:tabular-nums;}
+  .tip .tnum i{flex:1;height:1px;background:rgba(127,196,255,.24);}
+  .tip h3{
+    margin:11px 0 0;font-size:16px;font-weight:400;letter-spacing:.06em;color:#fff;
+  }
+  .tip .tcat{margin:7px 0 0;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#5f6a78;}
+  .tip .tdesc{
+    margin:13px 0 0;font-size:11.5px;line-height:1.85;letter-spacing:.015em;color:#a9b6c6;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .tip .tteam{
+    display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;
+    padding-top:13px;border-top:1px solid rgba(255,255,255,.08);
+  }
+  .tip .tteam span{
+    font-size:9.5px;letter-spacing:.1em;color:#8fa6bd;
+    border:1px solid rgba(143,166,189,.28);padding:4px 7px;line-height:1;
+  }
+  .tip .tteam span:first-child{color:var(--sky);border-color:rgba(127,196,255,.4);}
+  .tip .tfoot{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-top:13px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#4b5560;
+  }
+  .tip .tfoot b{color:#c9d6e4;font-weight:400;letter-spacing:.1em;}
+
+  .card img{
+    width:100%;height:100%;display:block;object-fit:cover;object-position:center;
+    filter:grayscale(.42) contrast(1.04) brightness(.9);
+    transition:filter .7s ease,transform 1.2s cubic-bezier(.16,1,.3,1);
+  }
+  .card:hover img{filter:grayscale(0) contrast(1.06) brightness(1);transform:scale(1.025);}
+  .card figure .ph{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;letter-spacing:.3em;color:#33506e;background:#0a0d12;
+  }
+
+  .card .idx{
+    position:absolute;top:10px;left:12px;
+    font-size:10px;letter-spacing:.16em;color:rgba(255,255,255,.55);
+    font-variant-numeric:tabular-nums;mix-blend-mode:difference;
+  }
+
+  .meta{display:flex;align-items:center;gap:12px;padding:12px 12px 14px;border-top:1px solid rgba(255,255,255,.06);}
+  .mtxt{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;align-items:baseline;}
+  .mtxt .num{grid-row:1;font-size:10px;letter-spacing:.1em;color:#3d3d3d;font-variant-numeric:tabular-nums;}
+  .mtxt .name{grid-row:1;font-size:clamp(12.5px,1.05vw,15px);letter-spacing:.02em;color:#e6e6e6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mtxt .cat{grid-column:2;grid-row:2;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#555;}
+
+  .vote{
+    flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    min-width:58px;padding:9px 11px;background:transparent;
+    border:1px solid rgba(255,255,255,.14);border-radius:0;color:#a9a9a9;
+    font-family:inherit;font-size:10px;letter-spacing:.14em;cursor:pointer;
+    transition:border-color .3s ease,color .3s ease,background .3s ease;
+  }
+  .vote:hover{border-color:rgba(127,196,255,.6);color:#cfe6ff;}
+  .vote.is-off{border-color:rgba(255,255,255,.08);color:#5a5a5a;cursor:not-allowed;}
+  .vote.is-off:hover{border-color:rgba(255,255,255,.08);color:#5a5a5a;}
+
+  /* ---------- 底部 ---------- */
+  .foot{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:22px;flex-wrap:wrap;
+    margin-top:2px;
+    padding:clamp(22px,3.4vh,34px) var(--pad) clamp(80px,10vh,110px);
+    border-top:1px solid var(--line);
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);
+  }
+  .foot b{color:#dcdcdc;font-weight:400;letter-spacing:.2em;}
+
+  /* ---------- 提示 ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:clamp(84px,13vh,120px);z-index:55;
+    transform:translate(-50%,10px);padding:10px 16px;
+    background:rgba(10,10,10,.9);border:1px solid rgba(255,255,255,.14);
+    font-size:11px;letter-spacing:.06em;color:#e8e8e8;
+    opacity:0;pointer-events:none;
+    transition:opacity .35s ease,transform .35s ease;
+    max-width:82vw;text-align:center;
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0);}
+
+  @media(max-width:760px){
+    .hero-main{flex-direction:column;align-items:flex-start;justify-content:flex-end;padding-bottom:18px;}
+    .hero-left{flex:none;max-width:none;}
+    /* 大字已移除，移动端不再保留占位 */
+    .hero-foot{padding-bottom:76px;font-size:9px;flex-wrap:wrap;gap:10px;}
+    .votebar{grid-template-columns:1fr;gap:14px;justify-items:center;text-align:center;}
+    .votebar .vb-right{justify-self:center;text-align:center;}
+    .vbtn{width:100%;padding:15px 18px;letter-spacing:.16em;}
+    .meta{flex-wrap:wrap;gap:8px;}
+    .bar nav{display:none;}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition-duration:.01ms!important;}
+    .card{opacity:1;transform:none;}
+  }
+</style><!-- ================= 作品瀑布流 ================= -->
+<section class="works" id="works">
+  <div class="works-head">
+    <div>
+      <h2>Selected Works</h2>
+      <p class="sub">校招生孵化专项 · 游戏作品展示 / 2026</p>
+    </div>
+    <div class="right">
+      共 <b>06</b> 个作品<br />每人最多投 <b>2</b> 票
+    </div>
+  </div>
+
+  <div class="grid" id="grid">
+    <article class="card" data-id="p1" data-name="潮汐之刃" data-base="128">
+      <figure><span class="idx">01</span><img src="https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/755b2bcfd432b8650339e9aac03af9b2.jpeg" alt="潮汐之刃" loading="lazy" /></figure>
+      <div class="meta">
+        <div class="mtxt"><span class="num">01</span><span class="name">潮汐之刃</span><span class="cat">Action / Card</span></div>
+        <a class="vote vote-link" href="#works">投票 <span>↗</span></a>
+      </div>
+    </article>
+
+    <article class="card" data-id="p2" data-name="黑曜计划" data-base="96">
+      <figure><span class="idx">02</span><img src="https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/ba97af7487264ae363a0f17b8004aaaa.jpeg" alt="黑曜计划" loading="lazy" /></figure>
+      <div class="meta">
+        <div class="mtxt"><span class="num">02</span><span class="name">黑曜计划</span><span class="cat">Strategy / SLG</span></div>
+        <a class="vote vote-link" href="#works">投票 <span>↗</span></a>
+      </div>
+    </article>
+
+    <article class="card" data-id="p3" data-name="雾门" data-base="74">
+      <figure><span class="idx">03</span><img src="https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/3b8d541aa6734971784f76047c1e50ad.jpeg" alt="雾门" loading="lazy" /></figure>
+      <div class="meta">
+        <div class="mtxt"><span class="num">03</span><span class="name">雾门</span><span class="cat">Open World</span></div>
+        <a class="vote vote-link" href="#works">投票 <span>↗</span></a>
+      </div>
+    </article>
+
+    <article class="card" data-id="p4" data-name="回声剧场" data-base="61">
+      <figure><span class="idx">04</span><img src="https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/80ce5b00c6b2eced612ac3f98e0e8cf4.jpeg" alt="回声剧场" loading="lazy" /></figure>
+      <div class="meta">
+        <div class="mtxt"><span class="num">04</span><span class="name">回声剧场</span><span class="cat">Narrative</span></div>
+        <a class="vote vote-link" href="#works">投票 <span>↗</span></a>
+      </div>
+    </article>
+
+    <article class="card" data-id="p5" data-name="深水区" data-base="53">
+      <figure><span class="idx">05</span><img src="https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/5d12f11aae4ed850175cac66a25bc14e.jpeg" alt="深水区" loading="lazy" /></figure>
+      <div class="meta">
+        <div class="mtxt"><span class="num">05</span><span class="name">深水区</span><span class="cat">Simulation</span></div>
+        <a class="vote vote-link" href="#works">投票 <span>↗</span></a>
+      </div>
+    </article>
+
+    <article class="card" data-id="p6" data-name="零点公告" data-base="47">
+      <figure><span class="idx">06</span><img src="https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/c251b657601519793e624d95aea0c3e9.jpeg" alt="零点公告" loading="lazy" /></figure>
+      <div class="meta">
+        <div class="mtxt"><span class="num">06</span><span class="name">零点公告</span><span class="cat">Tactical</span></div>
+        <a class="vote vote-link" href="#works">投票 <span>↗</span></a>
+      </div>
+    </article>
+
+
+  </div>
+
+  <!-- 投票入口：整行投票条 -->
+  <div class="votebar">
+    <div class="vb-left">GAME AWARDS 2026</div>
+    <a class="vbtn vote-link" href="#works">为你看好的游戏投票 <span>↗</span></a>
+    <div class="vb-right">每人 2 票 · 账号去重</div>
+  </div>
+</section>
+
+<footer class="foot" id="about">
+  <div><b>Q1.COM</b> — 冰川网络 · 校招生孵化专项 2026</div>
+  <div>账号实名投票 · 每人最多 2 票 · 问卷统计</div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="tip" id="tip" aria-hidden="true">
+  <div class="tnum"><b id="tipNo">01</b><span id="tipCat">ACTION / CARD</span><i></i></div>
+  <h3 id="tipName">潮汐之刃</h3>
+  <p class="tcat" id="tipSub">竖版动作卡牌 · 项目背景</p>
+  <p class="tdesc" id="tipDesc"></p>
+  <div class="tteam" id="tipTeam"></div>
+  <div class="tfoot"><span>项目成员 <b id="tipCount">6</b> 人</span><span>悬停查看 · 点击投票</span></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= 1. 首屏：跟随鼠标，图片依次出现又消失 ================= */
+  var urls = [
+    'https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/755b2bcfd432b8650339e9aac03af9b2.jpeg',
+    'https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/ba97af7487264ae363a0f17b8004aaaa.jpeg',
+    'https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/3b8d541aa6734971784f76047c1e50ad.jpeg',
+    'https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/80ce5b00c6b2eced612ac3f98e0e8cf4.jpeg',
+    'https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/5d12f11aae4ed850175cac66a25bc14e.jpeg',
+    'https://bcgpt-cn.oss-cn-beijing.aliyuncs.com/upload/image/2026/11/20261117/c251b657601519793e624d95aea0c3e9.jpeg'
+  ];   /* 与瀑布流 6 个项目封面一一对应，顺序 = p1…p6 */
+
+  var trailEl = document.getElementById('trail');
+  var countEl = document.getElementById('imgCount');
+  var idx = 0;
+  var acc = 0;
+  var lastP = null;
+  var lastT = 0;
+  var interacted = false;
+  var THRESH = 106;   /* 鼠标累计移动多少像素换一张 */
+  var GAP_MS = 105;   /* 最小切换间隔 */
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function setCount() {
+    if (countEl) countEl.textContent = pad(((idx - 1) % urls.length) + 1) + ' / ' + pad(urls.length);
+  }
+
+  function spawn(x, y) {
+    if (!trailEl) return;
+    while (trailEl.childElementCount > 4) { trailEl.removeChild(trailEl.firstElementChild); }
+
+    var el = document.createElement('div');
+    el.className = 'trail-item';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.setProperty('--rot', (Math.random() * 10 - 5).toFixed(2) + 'deg');
+
+    var img = document.createElement('img');
+    img.src = urls[idx % urls.length];
+    img.alt = '';
+    img.decoding = 'async';
+    el.appendChild(img);
+    trailEl.appendChild(el);
+
+    idx++;
+    setCount();
+
+    requestAnimationFrame(function () { el.classList.add('show'); });
+
+    var life = 1350 + Math.random() * 520;
+    setTimeout(function () {
+      el.classList.add('out');
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 820);
+    }, life);
+  }
+
+  function onMove(e) {
+    if (window.scrollY > window.innerHeight * 0.8) return;
+    interacted = true;
+    var x, y;
+    if (e.touches && e.touches.length) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
+    else { x = e.clientX; y = e.clientY; }
+    if (x == null || y == null) return;
+
+    if (lastP) acc += Math.sqrt(Math.pow(x - lastP[0], 2) + Math.pow(y - lastP[1], 2));
+    lastP = [x, y];
+
+    var now = Date.now();
+    if (acc >= THRESH && now - lastT > GAP_MS) {
+      acc = 0;
+      lastT = now;
+      spawn(x, y);
+    }
+  }
+
+  window.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('touchmove', onMove, { passive: true });
+
+  /* 滚出首屏就关掉图片层，别干扰瀑布流 */
+  function onScroll() {
+    var on = window.scrollY < window.innerHeight * 0.8;
+    if (trailEl) {
+      trailEl.style.opacity = on ? '1' : '0';
+      if (!on && trailEl.childElementCount) trailEl.innerHTML = '';
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  /* 没有鼠标操作时自动演示，保证首屏不空 */
+  setTimeout(function () {
+    if (interacted || window.scrollY > 40) return;
+    spawn(window.innerWidth * 0.42, window.innerHeight * 0.52);
+  }, 700);
+  var idle = setInterval(function () {
+    if (interacted) { clearInterval(idle); return; }
+    if (window.scrollY > 40) return;
+    spawn(window.innerWidth * (0.16 + Math.random() * 0.42),
+          window.innerHeight * (0.3 + Math.random() * 0.42));
+  }, 2100);
+
+  /* ================= 2. 瀑布流进场 ================= */
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          en.target.classList.add('in');
+          io.unobserve(en.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    cards.forEach(function (c) { io.observe(c); });
+  } else {
+    cards.forEach(function (c) { c.classList.add('in'); });
+  }
+
+  /* ================= 1.5 两列并排布局 ================= */
+  var STAND = { top: 0, bottom: 0 };   /* 作品区滚动窗口基线 */
+  /* 两列并排：同一行卡片底边对齐（用透明上内边距补齐高度差） */
+  function applyAlign() {
+    cards.forEach(function (c) { c.style.paddingTop = '0px'; });
+    var rows = {};
+    cards.forEach(function (c) {
+      var k = String(Math.round(c.getBoundingClientRect().top));
+      (rows[k] = rows[k] || []).push(c);
+    });
+    Object.keys(rows).forEach(function (k) {
+      var arr = rows[k], maxH = 0;
+      arr.forEach(function (c) { if (c.offsetHeight > maxH) maxH = c.offsetHeight; });
+      arr.forEach(function (c) {
+        var pad = maxH - c.offsetHeight;
+        c.style.paddingTop = pad > 0.5 ? pad + 'px' : '0px';
+      });
+    });
+    measureStand();
+  }
+
+  function measureStand() {
+    var prev = document.getElementById('works');
+    var top = prev ? prev.getBoundingClientRect().top + window.scrollY : 0;
+    var lastBottom = 0;
+    cards.forEach(function (c) {
+      var b = c.getBoundingClientRect().bottom + window.scrollY;
+      if (b > lastBottom) lastBottom = b;
+    });
+    STAND.top = top;
+    STAND.bottom = Math.max(top, lastBottom - window.innerHeight * 0.18);
+  }
+
+  applyAlign();
+  window.addEventListener('resize', function () { applyAlign(); });
+  window.addEventListener('load', function () { applyAlign(); });
+
+  /* 项目文案占位（正式内容替换这里即可，key = 卡片 data-id） */
+  var PROJECT_INFO = {
+    p1: {
+      sub: '竖版动作卡牌 · 项目背景',
+      desc: '潮汐退去后露出的古代剑冢，玩家以“铸剑人”身份收集残刃，在每一次潮起潮落之间重构战斗流派。核心玩法围绕回合内连招与卡组构筑展开，美术以冷银与深蓝为基调。',
+      team: ['主策 · 校招A', '战斗策划 · 校招B', '原画 · 校招C', '动作 · 校招D', '程序 · 校招E', '导师 · 主美']
+    },
+    p2: {
+      sub: '黑曜策略 SLG · 项目背景',
+      desc: '在一片被黑曜石覆盖的大陆上，玩家经营据点、调度军团，与其他玩家争夺稀缺资源带。强调长线运营与同盟协作，地图与势力系统由校招同学从零搭建原型。',
+      team: ['制作人 · 校招A', '数值 · 校招B', '系统策划 · 校招C', '客户端 · 校招D', '服务端 · 校招E', '导师 · 制作人']
+    },
+    p3: {
+      sub: '开放世界探索 · 项目背景',
+      desc: '荒原尽头矗立着一座无主的巨门，穿过它的人会抵达被雾气覆盖的另一片世界。项目重点在无缝地形与动态天气，探索节奏刻意放慢，让玩家为“走过去”本身付出耐心。',
+      team: ['世界策划 · 校招A', '场景美术 · 校招B', '技术美术 · 校招C', '引擎程序 · 校招D', '音频 · 校招E', '导师 · 主策']
+    },
+    p4: {
+      sub: '叙事体验 · 项目背景',
+      desc: '一座只在夜里开演的剧场，观众听到的每一段回声都是上一个角色的遗言。以对话与声音为核心驱动，叙事结构采用多线回收设计，尝试在短流程里完成一次情绪闭环。',
+      team: ['叙事策划 · 校招A', '编剧 · 校招B', '交互设计 · 校招C', '程序 · 校招D', '配音统筹 · 校招E', '导师 · 叙事总监']
+    },
+    p5: {
+      sub: '模拟经营 · 项目背景',
+      desc: '深水之下的一座观测站，玩家需要在有限氧气与电力下维持运转，并判断哪些信号值得回应。系统耦合度高，把“资源管理”与“心理压力”放在同一套数值体系里。',
+      team: ['系统策划 · 校招A', '数值 · 校招B', 'UI · 校招C', '程序 · 校招D', '关卡 · 校招E', '导师 · 主策']
+    },
+    p6: {
+      sub: '战术竞技 · 项目背景',
+      desc: '零点整，城市所有屏幕同时亮起同一条公告，玩家必须在信息差中完成一次限时突入。关卡采用几何化混凝土空间，用极简结构逼出战术选择，几乎不依赖贴图堆量。',
+      team: ['关卡策划 · 校招A', '战斗策划 · 校招B', '场景 · 校招C', '程序 · 校招D', '测试 · 校招E', '导师 · 关卡总监']
+    }
+  };
+
+  var tipEl = document.getElementById('tip');
+  var tipNo = document.getElementById('tipNo');
+  var tipCat = document.getElementById('tipCat');
+  var tipName = document.getElementById('tipName');
+  var tipSub = document.getElementById('tipSub');
+  var tipDesc = document.getElementById('tipDesc');
+  var tipTeam = document.getElementById('tipTeam');
+  var tipCount = document.getElementById('tipCount');
+  var tipCard = null;
+  var tipX = 0, tipY = 0, tipShown = false;
+
+  function fillTip(card) {
+    var id = card.getAttribute('data-id');
+    var info = PROJECT_INFO[id] || {};
+    var num = card.querySelector('.mtxt .num');
+    var cat = card.querySelector('.mtxt .cat');
+    var name = card.getAttribute('data-name') || '';
+
+    tipNo.textContent = num ? num.textContent : '';
+    tipCat.textContent = cat ? cat.textContent : '';
+    tipName.textContent = name;
+    tipSub.textContent = info.sub || '项目背景';
+    tipDesc.textContent = info.desc || '项目背景文案待补充。';
+    tipTeam.innerHTML = '';
+    (info.team || []).forEach(function (t) {
+      var s = document.createElement('span');
+      s.textContent = t;
+      tipTeam.appendChild(s);
+    });
+    tipCount.textContent = (info.team || []).length;
+  }
+
+  function placeTip(x, y) {
+    if (!tipEl) return;
+    var w = tipEl.offsetWidth || 320;
+    var h = tipEl.offsetHeight || 240;
+    var pad = 18;
+    var left = x + 22;
+    var top = y + 18;
+    if (left + w > window.innerWidth - pad) left = Math.max(pad, x - w - 22);
+    if (top + h > window.innerHeight - pad) top = Math.max(pad, window.innerHeight - h - pad);
+    if (top < pad) top = pad;
+    tipEl.style.transform = 'translate3d(' + Math.round(left) + 'px,' + Math.round(top) + 'px,0)';
+  }
+
+  cards.forEach(function (card) {
+    card.addEventListener('mouseenter', function (e) {
+      tipCard = card;
+      fillTip(card);
+      tipX = e.clientX; tipY = e.clientY;
+      placeTip(tipX, tipY);
+      if (!tipShown) {
+        tipShown = true;
+        requestAnimationFrame(function () { tipEl.classList.add('on'); });
+      }
+    });
+    card.addEventListener('mousemove', function (e) {
+      if (tipCard !== card) return;
+      tipX = e.clientX; tipY = e.clientY;
+      placeTip(tipX, tipY);
+    });
+    card.addEventListener('mouseleave', function () {
+      if (tipCard === card) { tipCard = null; }
+      tipEl.classList.remove('on');
+      tipShown = false;
+    });
+  });
+
+  if (tipEl) {
+    tipEl.addEventListener('transitionend', function () {
+      if (!tipEl.classList.contains('on')) tipCard = null;
+    });
+  }
+
+  /* 触屏：点封面临时展示（不影响投票按钮） */
+  cards.forEach(function (card) {
+    var fig = card.querySelector('figure');
+    if (!fig) return;
+    fig.addEventListener('click', function () {
+      if (!window.matchMedia('(hover:none)').matches) return;
+      fillTip(card);
+      var r = fig.getBoundingClientRect();
+      placeTip(r.left + r.width / 2, r.top + r.height / 2);
+      tipEl.classList.add('on');
+      clearTimeout(tipEl._t);
+      tipEl._t = setTimeout(function () { tipEl.classList.remove('on'); }, 3200);
+    });
+  });
+
+  window.addEventListener('scroll', function () {
+    if (tipEl && tipEl.classList.contains('on') && tipCard) placeTip(tipX, tipY);
+  }, { passive: true });
+
+  /* ================= 3. 投票入口：跳问卷（真人统计 + 账号去重交给问卷侧） ================= */
+  /*
+    SURVEY_URL 填问卷链接即可全局生效：首屏 CTA、导航「作品投票」、每张卡片的「投票 ↗」、
+    作品区底部的整行投票条，四处共用 .vote-link。
+    未填写时按钮回落为「滚到作品区」并在点击时提示即将开放，不会跳到空白页。
+  */
+  var SURVEY_URL = '';   /* ← 问卷链接填这里，例如 'https://...' */
+
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 2400);
+  }
+
+  var voteLinks = [].slice.call(document.querySelectorAll('.vote-link'));
+  var hasSurvey = !!(SURVEY_URL && /^https?:\/\//i.test(SURVEY_URL));
+
+  voteLinks.forEach(function (a) {
+    if (hasSurvey) {
+      a.href = SURVEY_URL;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.removeAttribute('aria-disabled');
+    } else {
+      a.classList.add('is-off');
+      a.setAttribute('aria-disabled', 'true');
+    }
+    a.addEventListener('click', function (ev) {
+      if (hasSurvey) return;              /* 正常打开问卷 */
+      ev.preventDefault();
+      toast('投票问卷即将开放');
+    });
+  });
+
+  /* 触屏：点封面临时展示（不影响投票按钮） */
+  cards.forEach(function (card) {
+    var fig = card.querySelector('figure');
+    if (!fig) return;
+    fig.addEventListener('click', function () {
+      if (!window.matchMedia('(hover:none)').matches) return;
+      fillTip(card);
+      var r = fig.getBoundingClientRect();
+      placeTip(r.left + r.width / 2, r.top + r.height / 2);
+      tipEl.classList.add('on');
+      clearTimeout(tipEl._t);
+      tipEl._t = setTimeout(function () { tipEl.classList.remove('on'); }, 3200);
+    });
+  });
+})();
+</script>
+</body>
+</html>
